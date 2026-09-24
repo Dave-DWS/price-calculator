@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Price Calculator</title>
+  <!-- Apple Web App Tags for Full-Screen Mode -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Price Calc">
+  
+  <!-- Tailwind CSS & Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    body {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4 font-sans select-none">
+
+  <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-gray-100 p-6 sm:p-8">
+    
+    <!-- Title Header -->
+    <div class="text-center mb-6">
+      <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Price Calculator</h1>
+      <p class="text-xs text-gray-500 mt-1">Convert FX & compute WS/RT prices</p>
+    </div>
+
+    <!-- Inputs -->
+    <div class="space-y-4">
+      
+      <!-- Base Price -->
+      <div>
+        <label for="basePrice" class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">
+          Base Price
+        </label>
+        <div class="relative">
+          <span id="currencySymbol" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-lg">€</span>
+          <input 
+            type="number" 
+            id="basePrice" 
+            placeholder="0.00" 
+            step="any"
+            min="0"
+            inputmode="decimal"
+            class="w-full pl-10 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-gray-900 text-lg font-semibold placeholder-gray-300"
+            oninput="calculatePrices()"
+            autofocus
+          />
+        </div>
+      </div>
+
+      <!-- Currency & FX Rate Inputs -->
+      <div class="grid grid-cols-2 gap-3">
+        <!-- Input Currency -->
+        <div>
+          <label for="currencySelect" class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">
+            Currency
+          </label>
+          <div class="relative">
+            <select 
+              id="currencySelect" 
+              class="w-full pl-3 pr-8 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-gray-900 text-sm font-medium appearance-none cursor-pointer"
+              onchange="handleCurrencyChange()"
+            >
+              <option value="EUR" data-symbol="€" selected>EUR (€)</option>
+              <option value="USD" data-symbol="$">USD ($)</option>
+              <option value="GBP" data-symbol="£">GBP (£)</option>
+              <option value="CAD" data-symbol="CA$">CAD ($)</option>
+              <option value="AUD" data-symbol="A$">AUD ($)</option>
+              <option value="JPY" data-symbol="¥">JPY (¥)</option>
+              <option value="CHF" data-symbol="CHF">CHF</option>
+            </select>
+            <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none"></i>
+          </div>
+        </div>
+
+        <!-- Exchange Rate Input -->
+        <div>
+          <label for="fxRateInput" class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">
+            FX Rate (USD)
+          </label>
+          <input 
+            type="number" 
+            id="fxRateInput" 
+            placeholder="1.08" 
+            step="any"
+            inputmode="decimal"
+            class="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-gray-900 text-sm font-medium placeholder-gray-400"
+            oninput="calculatePrices()"
+          />
+        </div>
+      </div>
+
+      <!-- Status Bar -->
+      <div class="flex items-center justify-between text-xs px-1 text-gray-400">
+        <span id="rateStatus" class="flex items-center gap-1.5">
+          <i class="fa-solid fa-circle-notch fa-spin text-indigo-500"></i> Fetching rate...
+        </span>
+        <button onclick="fetchExchangeRates()" class="text-indigo-600 hover:text-indigo-700 font-medium">
+          Refresh
+        </button>
+      </div>
+
+    </div>
+
+    <hr class="my-6 border-gray-100">
+
+    <!-- Price Outputs -->
+    <div class="grid grid-cols-2 gap-4">
+      <!-- WS Price -->
+      <div class="bg-indigo-50/70 rounded-2xl p-4 border border-indigo-100 text-center">
+        <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider block mb-1">WS Price</span>
+        <span id="wsPrice" class="text-2xl font-extrabold text-indigo-950 tracking-tight block">$0.00</span>
+        <span class="text-[10px] text-indigo-400 font-medium mt-0.5 block">USD</span>
+      </div>
+
+      <!-- RT Price -->
+      <div class="bg-emerald-50/70 rounded-2xl p-4 border border-emerald-100 text-center">
+        <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider block mb-1">RT Price</span>
+        <span id="rtPrice" class="text-2xl font-extrabold text-emerald-950 tracking-tight block">$0.00</span>
+        <span class="text-[10px] text-emerald-400 font-medium mt-0.5 block">USD</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const FALLBACK_RATES = { EUR: 1.08, USD: 1.00, GBP: 1.27, CAD: 0.74, AUD: 0.65, JPY: 0.0067, CHF: 1.13 };
+    let liveRates = { ...FALLBACK_RATES };
+
+    async function fetchExchangeRates() {
+      const statusEl = document.getElementById('rateStatus');
+      statusEl.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin text-indigo-500"></i> Fetching rate...`;
+
+      const apis = [
+        'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json',
+        'https://open.er-api.com/v6/latest/USD'
+      ];
+
+      let success = false;
+      for (const url of apis) {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) continue;
+          const data = await res.json();
+          if (data.usd) {
+            Object.keys(FALLBACK_RATES).forEach(c => { if (data.usd[c.toLowerCase()]) liveRates[c] = 1 / data.usd[c.toLowerCase()]; });
+            success = true; break;
+          } else if (data.rates) {
+            Object.keys(FALLBACK_RATES).forEach(c => { if (data.rates[c]) liveRates[c] = 1 / data.rates[c]; });
+            success = true; break;
+          }
+        } catch (e) {}
+      }
+
+      statusEl.innerHTML = success 
+        ? `<i class="fa-solid fa-circle-check text-emerald-500"></i> Live FX updated`
+        : `<i class="fa-solid fa-triangle-exclamation text-amber-500"></i> Using cached rate`;
+
+      updateFxInputFromSelection();
+      calculatePrices();
+    }
+
+    function handleCurrencyChange() {
+      const select = document.getElementById('currencySelect');
+      const symbol = select.options[select.selectedIndex].getAttribute('data-symbol');
+      document.getElementById('currencySymbol').textContent = symbol;
+      updateFxInputFromSelection();
+      calculatePrices();
+    }
+
+    function updateFxInputFromSelection() {
+      const cur = document.getElementById('currencySelect').value;
+      const rate = liveRates[cur] || FALLBACK_RATES[cur] || 1;
+      document.getElementById('fxRateInput').value = rate.toFixed(4);
+    }
+
+    function calculatePrices() {
+      const baseInput = document.getElementById('basePrice').value;
+      const fxRate = parseFloat(document.getElementById('fxRateInput').value);
+
+      if (baseInput === '' || isNaN(baseInput) || isNaN(fxRate)) {
+        document.getElementById('wsPrice').textContent = '$0.00';
+        document.getElementById('rtPrice').textContent = '$0.00';
+        return;
+      }
+
+      const basePrice = parseFloat(baseInput);
+      const usdBase = basePrice * fxRate;
+      const intermediateUsd = usdBase + 6.50;
+      const wsPrice = intermediateUsd * 1.60;
+      const rtPrice = wsPrice * 1.28;
+
+      document.getElementById('wsPrice').textContent = '$' + wsPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('rtPrice').textContent = '$' + rtPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      handleCurrencyChange();
+      fetchExchangeRates();
+    });
+  </script>
+
+</body>
+</html>
