@@ -32,10 +32,10 @@
     <!-- Inputs -->
     <div class="space-y-4">
       
-      <!-- Base Price -->
+      <!-- Bottle Price Input -->
       <div>
         <label for="basePrice" class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">
-          Base Price
+          Bottle Price
         </label>
         <div class="relative">
           <span id="currencySymbol" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-lg">€</span>
@@ -95,6 +95,71 @@
         </div>
       </div>
 
+      <!-- Costs & Markups Section (Collapsible) -->
+      <div class="bg-gray-50/80 rounded-2xl p-3 border border-gray-200/80">
+        <button 
+          type="button" 
+          onclick="toggleMarkupSection()" 
+          class="w-full flex items-center justify-between text-xs font-semibold text-gray-600 uppercase tracking-wider focus:outline-none"
+        >
+          <span>Costs & Markups</span>
+          <i id="markupChevron" class="fa-solid fa-chevron-down text-gray-400 transition-transform duration-200"></i>
+        </button>
+
+        <div id="markupInputs" class="hidden grid grid-cols-3 gap-2.5 mt-3 pt-3 border-t border-gray-200/60">
+          <!-- Transport/Duty -->
+          <div>
+            <label for="overheadInput" class="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1 truncate" title="Transport / Duty">
+              Freight/Duty
+            </label>
+            <div class="relative">
+              <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs">$</span>
+              <input 
+                type="number" 
+                id="overheadInput" 
+                value="6.50" 
+                step="any"
+                inputmode="decimal"
+                class="w-full pl-6 pr-2 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-gray-900 text-xs font-medium"
+                oninput="calculatePrices()"
+              />
+            </div>
+          </div>
+
+          <!-- Wholesale Markup -->
+          <div>
+            <label for="wsMarkupInput" class="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1 truncate" title="Wholesale Markup">
+              WS Markup
+            </label>
+            <input 
+              type="number" 
+              id="wsMarkupInput" 
+              value="1.6" 
+              step="any"
+              inputmode="decimal"
+              class="w-full px-2.5 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-gray-900 text-xs font-medium text-center"
+              oninput="calculatePrices()"
+            />
+          </div>
+
+          <!-- Retail Markup -->
+          <div>
+            <label for="rtMarkupInput" class="block text-[10px] font-medium text-gray-500 uppercase tracking-wider mb-1 truncate" title="Retail Markup">
+              RT Markup
+            </label>
+            <input 
+              type="number" 
+              id="rtMarkupInput" 
+              value="1.28" 
+              step="any"
+              inputmode="decimal"
+              class="w-full px-2.5 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-gray-900 text-xs font-medium text-center"
+              oninput="calculatePrices()"
+            />
+          </div>
+        </div>
+      </div>
+
       <!-- Status Bar -->
       <div class="flex items-center justify-between text-xs px-1 text-gray-400">
         <span id="rateStatus" class="flex items-center gap-1.5">
@@ -115,14 +180,14 @@
       <div class="bg-indigo-50/70 rounded-2xl p-4 border border-indigo-100 text-center">
         <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider block mb-1">WS Price</span>
         <span id="wsPrice" class="text-2xl font-extrabold text-indigo-950 tracking-tight block">$0.00</span>
-        <span class="text-[10px] text-indigo-400 font-medium mt-0.5 block">USD</span>
+        <span class="text-[10px] text-indigo-400 font-medium mt-0.5 block">BMD</span>
       </div>
 
       <!-- RT Price -->
       <div class="bg-emerald-50/70 rounded-2xl p-4 border border-emerald-100 text-center">
         <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider block mb-1">RT Price</span>
         <span id="rtPrice" class="text-2xl font-extrabold text-emerald-950 tracking-tight block">$0.00</span>
-        <span class="text-[10px] text-emerald-400 font-medium mt-0.5 block">USD</span>
+        <span class="text-[10px] text-emerald-400 font-medium mt-0.5 block">BMD</span>
       </div>
     </div>
 
@@ -131,6 +196,19 @@
   <script>
     const FALLBACK_RATES = { EUR: 1.08, USD: 1.00, GBP: 1.27, CAD: 0.74, AUD: 0.65, JPY: 0.0067, CHF: 1.13 };
     let liveRates = { ...FALLBACK_RATES };
+
+    function toggleMarkupSection() {
+      const inputs = document.getElementById('markupInputs');
+      const chevron = document.getElementById('markupChevron');
+      
+      if (inputs.classList.contains('hidden')) {
+        inputs.classList.remove('hidden');
+        chevron.style.transform = 'rotate(180deg)';
+      } else {
+        inputs.classList.add('hidden');
+        chevron.style.transform = 'rotate(0deg)';
+      }
+    }
 
     async function fetchExchangeRates() {
       const statusEl = document.getElementById('rateStatus');
@@ -182,6 +260,9 @@
     function calculatePrices() {
       const baseInput = document.getElementById('basePrice').value;
       const fxRate = parseFloat(document.getElementById('fxRateInput').value);
+      const overhead = parseFloat(document.getElementById('overheadInput').value) || 0;
+      const wsMarkup = parseFloat(document.getElementById('wsMarkupInput').value) || 1.6;
+      const rtMarkup = parseFloat(document.getElementById('rtMarkupInput').value) || 1.28;
 
       if (baseInput === '' || isNaN(baseInput) || isNaN(fxRate)) {
         document.getElementById('wsPrice').textContent = '$0.00';
@@ -191,9 +272,10 @@
 
       const basePrice = parseFloat(baseInput);
       const usdBase = basePrice * fxRate;
-      const intermediateUsd = usdBase + 6.50;
-      const wsPrice = intermediateUsd * 1.60;
-      const rtPrice = wsPrice * 1.28;
+      const intermediateUsd = usdBase + overhead;
+      
+      const wsPrice = intermediateUsd * wsMarkup;
+      const rtPrice = wsPrice * rtMarkup;
 
       document.getElementById('wsPrice').textContent = '$' + wsPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       document.getElementById('rtPrice').textContent = '$' + rtPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
